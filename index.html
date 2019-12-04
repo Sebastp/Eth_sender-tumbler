@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>ETH Tool</title>
+     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <style media="screen">
+      ul{
+        list-style: none;
+      }
+
+      input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+    </style>
+
+  </head>
+  <body style="text-align: center; font-family:Arial">
+
+    <div class="">
+      <div style="margin: 20px auto">
+        <span>Gwei to use</span>
+        <input type="number" id="useGwei" placeholder="Gwei to use per transaction" value="10">
+      </div>
+      <h1>Specify addresses with tokens</h1>
+      <ul id="adtokens" style="list-style: none">
+        <li class="adtokens-itm" gascost='0'>
+          <span class="adtokens-close" style="cursor: pointer" onclick="closeTok(this)">close</span>
+          <input type="text" class="adtokens-public adtokens-key" placeholder="public key" value="0x6F87E1C5f467af6DE7940c381a20f7189FDCD5c5">
+          <input type="text" class="adtokens-private adtokens-key" placeholder="private key" value="0x2885ed5f62d0d8dacda34b6b98338dddcb7fd63c74679248bd7bd3de088daa28">
+          <button class="adtokens-check" onclick="chceckAdd(this.parentNode)">Check address</button>
+          <div class="adtokens-sub" style="text-align: left; margin: 14px 0px;"></div>
+          <ul class="adtokens-toks" style="text-align: left; margin: 14px 0px;">
+          </ul>
+        </li>
+
+      </ul>
+      <span id="addadd" style="cursor: pointer">Add New Address</span>
+
+
+
+      <h1>Adress with ETH for Fees</h1>
+      <p>Estimated Fees: <span id="estgas">0</span></p>
+      <input type="text" id="ethAdd" placeholder="Address" value="0xff21dAAC4870b7200b8fA56f06Acb56fb77C4ABf">
+      <input type="text" id="ethPriv" placeholder="private key" value="0x2a9108d88f6a69d49d6df18a5152ecdcf991d71a8441eec50ed8833860f2753b">
+      <button type="button" id="send">Send</button>
+      <span id="ethRem" style="display: block"></span>
+
+
+
+
+      <h1>Send tokens to:</h1>
+      <ul id="sendtokens" style="list-style: none">
+        <li class="sendtokens-itm">
+          <input type="text" class="sendtokens-public sendtokens-key" placeholder="public key" value="0x627480F1A39B06BaddF61e1b512b5A1Bf8d8cFE6">
+          <span class="sendtokens-close" style="cursor: pointer" onclick="closesendd(this)">close</span>
+        </li>
+      </ul>
+      <span id="addsend" style="cursor: pointer">---Add New Address---</span>
+      <button type="button" id="sendToks" style="margin: 100px auto;display: block;">Send Tokens</button>
+
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <script type="text/javascript" src="dist/bundle.js"></script>
+    <script type="text/javascript">
+
+    $(function () {
+      $('#useGwei').keyup(function(event) {
+        tokenDefGwei = parseInt($(this).val());
+        window.getWholeCost();
+      });
+
+      $('#addadd').click(function() {
+        var liElem = $( ".adtokens-itm" ).clone().first();
+        var adtokens = liElem.appendTo( "#adtokens" )[0];
+        adtokens.getElementsByClassName('adtokens-key')[0].value = '';
+        adtokens.getElementsByClassName('adtokens-key')[1].value = '';
+        adtokens.getElementsByClassName('adtokens-sub')[0].innerHTML = '';
+        adtokens.getElementsByClassName('adtokens-toks')[0].innerHTML = '';
+        liElem[0].setAttribute('gascost', '0');
+        liElem[0].setAttribute('tokens', '');
+      });
+
+      $('#addsend').click(function() {
+        var liElem = $( ".sendtokens-itm:first-child" ).clone();
+        liElem.appendTo( "#sendtokens" )[0].getElementsByClassName('sendtokens-key')[0].value = '';
+        window.getWholeCost();
+      });
+    });
+
+
+    function closeTok(event){
+      lielem = event.parentNode;
+      if ($('#adtokens')[0].children.length == 1) {
+        lielem.getElementsByClassName('adtokens-key')[0].value = '';
+        lielem.getElementsByClassName('adtokens-key')[1].value = '';
+        lielem.getElementsByClassName('adtokens-sub')[0].innerHTML = '';
+        lielem.getElementsByClassName('adtokens-toks')[0].innerHTML = '';
+        lielem.setAttribute('gascost', '0');
+        lielem.setAttribute('tokens', '');
+      }else {
+        lielem.remove();
+      }
+      window.getWholeCost();
+    }
+
+    function closesendd(event){
+      lielem = event.parentNode;
+      if ($('#sendtokens')[0].children.length == 1) {
+        lielem.getElementsByClassName('sendtokens-public')[0].value = '';
+      }else {
+        lielem.remove();
+      }
+      window.getWholeCost();
+    }
+
+    function chceckAdd(event) {
+      lielem = event;
+      var pubKey = $(lielem.getElementsByClassName('adtokens-public')[0]).val();
+      lielem.getElementsByClassName('adtokens-sub')[0].innerHTML = '';
+      lielem.getElementsByClassName('adtokens-toks')[0].innerHTML = '';
+      lielem.setAttribute('gascost', '0');
+      lielem.setAttribute('tokens', '');
+
+      var pubKeys= $('#adtokens')[0].getElementsByClassName('adtokens-public'),
+          foundLis = 0;
+      for (var i = 0; i < pubKeys.length; i++) {
+        if (pubKeys[i].value == pubKey) {
+          foundLis++;
+        }
+      }
+
+
+      if (foundLis > 1) {
+        alert('This address is entered multiple times');
+        lielem.remove();
+      }else {
+        if (retok.test(pubKey)) {
+          window.checkTokens(pubKey);
+
+        }else {
+          lielem.getElementsByClassName('adtokens-sub')[0].innerHTML = 'not valid address';
+        }
+      }
+      window.getWholeCost();
+    }
+
+
+    $('#ethAdd').blur(function() {
+      if (retok.test($(this).val())) {
+        web3.eth.getBalance($(this).val(), function(err, balance) {
+          $('#ethRem').text('eth balance: '+window.ethDecim(balance));
+        });
+      }
+    });
+
+
+    $('#send').click(function() {
+      window.sendEth($('#ethPriv').val(), $('#ethAdd').val());
+    });
+
+
+    $('#sendToks').click(function() {
+      tokAElems = document.getElementsByClassName('adtokens-itm');
+      finalElsFrom = [];
+
+      walletsElems = document.getElementsByClassName('sendtokens-public');
+      finalElsTo = [];
+
+      for (var i = 0; i < tokAElems.length; i++) {
+        if (tokAElems[i].getElementsByClassName('adtokens-private').value != '' && tokAElems[i].getAttribute('tokens') != '' && tokAElems[i].getAttribute('tokens') != null) {
+          finalElsFrom.push(tokAElems[i]);
+        }
+      }
+
+      for (var z = 0; z < walletsElems.length; z++) {
+        if (walletsElems[z].value != '') {
+          finalElsTo.push(walletsElems[z].value);
+        }
+      }
+
+      if (finalElsFrom.length > 0) {
+        window.sendTokens(finalElsFrom, finalElsTo);
+      }
+    });
+
+    </script>
+
+  </body>
+</html>
